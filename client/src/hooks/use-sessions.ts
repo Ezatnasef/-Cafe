@@ -92,6 +92,39 @@ export function useUpdateSessionItem() {
   });
 }
 
+export function useUpdateSession() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...data }: { id: number; customerName?: string; paymentMethod?: string | null; status?: string }) => {
+      const url = buildUrl(api.sessions.update.path, { id });
+      const res = await fetch(url, {
+        method: api.sessions.update.method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to update session");
+      return await res.json();
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: [api.sessions.list.path] }),
+  });
+}
+
+export function useDeleteSession() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const res = await fetch(`/api/sessions/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to delete session");
+      return await res.json();
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: [api.sessions.list.path] }),
+  });
+}
+
 export function useDeleteSessionItem() {
   const queryClient = useQueryClient();
   return useMutation({

@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800&display=swap');
+/* System fonts - no external CDN needed for offline */
 
 @tailwind base;
 @tailwind components;
@@ -6,7 +6,7 @@
 
 @layer base {
   :root {
-    --font-cairo: 'Cairo', sans-serif;
+    --font-cairo: 'Segoe UI', 'Tahoma', 'Arial', sans-serif;
 
     /* Dark Brown & Gold/Olive Theme - Light mode (defaulting to dark aesthetic) */
     --background: 25 20% 12%;       /* Very dark brown */

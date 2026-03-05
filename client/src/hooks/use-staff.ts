@@ -28,3 +28,34 @@ export function useCreateStaff() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: [api.staff.list.path] }),
   });
 }
+
+export function useUpdateStaff() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: Partial<InsertStaff> }) => {
+      const res = await fetch(`/api/staff/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to update staff");
+      return res.json();
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: [api.staff.list.path] }),
+  });
+}
+
+export function useDeleteStaff() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const res = await fetch(`/api/staff/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to delete staff");
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: [api.staff.list.path] }),
+  });
+}

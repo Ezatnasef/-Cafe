@@ -28,3 +28,34 @@ export function useCreateCustomer() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: [api.customers.list.path] }),
   });
 }
+
+export function useUpdateCustomer() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: Partial<InsertCustomer> }) => {
+      const res = await fetch(`/api/customers/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to update customer");
+      return res.json();
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: [api.customers.list.path] }),
+  });
+}
+
+export function useDeleteCustomer() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const res = await fetch(`/api/customers/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to delete customer");
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: [api.customers.list.path] }),
+  });
+}

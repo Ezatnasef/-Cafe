@@ -12,13 +12,16 @@ import { useCategories } from "@/hooks/use-categories";
 import { useSessions, useCreateSession, useAddSessionItem, useUpdateSessionItem, useDeleteSessionItem, useCheckoutSession } from "@/hooks/use-sessions";
 import { useCustomers } from "@/hooks/use-customers";
 import { useStaff } from "@/hooks/use-staff";
-import { Plus, Minus, Trash2, Search, CreditCard, Banknote, Smartphone, UtensilsCrossed } from "lucide-react";
+import { Plus, Minus, Trash2, Search, CreditCard, Banknote, Smartphone, UtensilsCrossed, ArrowUpDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 export default function POS() {
   const [activeCategoryId, setActiveCategoryId] = useState<number | null>(null);
   const [activeSessionId, setActiveSessionId] = useState<number | null>(null);
+  const [sessionDeselected, setSessionDeselected] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [priceSort, setPriceSort] = useState<"none" | "asc" | "desc">("none");
+  const [maxPrice, setMaxPrice] = useState<string>("");
   const [isNewSessionOpen, setIsNewSessionOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
 
@@ -41,12 +44,17 @@ export default function POS() {
   const deleteItem = useDeleteSessionItem();
   const checkout = useCheckoutSession();
 
-  const activeSession = sessions?.find(s => s.id === activeSessionId) || sessions?.[0];
+  const activeSession = sessionDeselected ? undefined : (sessions?.find(s => s.id === activeSessionId) || sessions?.[0]);
 
-  const filteredItems = items?.filter(item => 
+  const filteredItems = items?.filter(item =>
     (activeCategoryId ? item.categoryId === activeCategoryId : true) &&
-    (searchQuery ? item.name.toLowerCase().includes(searchQuery.toLowerCase()) : true)
-  );
+    (searchQuery ? item.name.toLowerCase().includes(searchQuery.toLowerCase()) : true) &&
+    (maxPrice ? item.price <= parseInt(maxPrice) : true)
+  ).sort((a, b) => {
+    if (priceSort === "asc") return a.price - b.price;
+    if (priceSort === "desc") return b.price - a.price;
+    return 0;
+  });
 
   const handleCreateSession = async () => {
     if (!newSessionCustomer || !newSessionStaff) {
@@ -61,6 +69,7 @@ export default function POS() {
     }, {
       onSuccess: (data) => {
         setActiveSessionId(data.id);
+        setSessionDeselected(false);
         setIsNewSessionOpen(false);
       }
     });
@@ -101,13 +110,46 @@ export default function POS() {
         {/* Left Side - Menu Grid */}
         <div className="flex-1 flex flex-col gap-4 overflow-hidden">
           {/* Categories & Search */}
-          <div className="flex items-center justify-between gap-4 shrink-0 flex-wrap md:flex-nowrap">
-            <ScrollArea className="w-full md:w-auto flex-1 whitespace-nowrap" orientation="horizontal">
+          <div className="flex items-center justify-between gap-3 shrink-0 flex-wrap md:flex-nowrap">
+            <div
+              className="w-full md:w-auto flex-1 whitespace-nowrap overflow-x-auto scrollbar-hide cursor-grab"
+              style={{ WebkitOverflowScrolling: 'touch' }}
+              onMouseDown={(e: React.MouseEvent<HTMLDivElement>) => {
+                const target = e.currentTarget;
+                let startX = e.pageX;
+                let scrollLeft = target.scrollLeft;
+                const onMouseMove = (ev: MouseEvent) => {
+                  target.scrollLeft = scrollLeft - (ev.pageX - startX);
+                };
+                const onMouseUp = () => {
+                  window.removeEventListener('mousemove', onMouseMove);
+                  window.removeEventListener('mouseup', onMouseUp);
+                  target.style.cursor = 'grab';
+                };
+                window.addEventListener('mousemove', onMouseMove);
+                window.addEventListener('mouseup', onMouseUp);
+                target.style.cursor = 'grabbing';
+              }}
+              onTouchStart={(e: React.TouchEvent<HTMLDivElement>) => {
+                const target = e.currentTarget;
+                let startX = e.touches[0].pageX;
+                let scrollLeft = target.scrollLeft;
+                const onTouchMove = (ev: TouchEvent) => {
+                  target.scrollLeft = scrollLeft - (ev.touches[0].pageX - startX);
+                };
+                const onTouchEnd = () => {
+                  window.removeEventListener('touchmove', onTouchMove);
+                  window.removeEventListener('touchend', onTouchEnd);
+                };
+                window.addEventListener('touchmove', onTouchMove);
+                window.addEventListener('touchend', onTouchEnd);
+              }}
+            >
               <div className="flex w-max space-x-2 space-x-reverse p-1">
                 <Button
                   variant={activeCategoryId === null ? "default" : "outline"}
                   onClick={() => setActiveCategoryId(null)}
-                  className={`rounded-xl px-8 h-14 text-lg font-bold ${activeCategoryId === null ? 'shadow-md glow-primary' : 'bg-card border-border/50'}`}
+                  className={`rounded-xl min-w-[90px] px-6 h-12 text-base font-bold ${activeCategoryId === null ? 'shadow-md glow-primary' : 'bg-card border-border/50'}`}
                 >
                   الكل
                 </Button>
@@ -116,22 +158,39 @@ export default function POS() {
                     key={cat.id}
                     variant={activeCategoryId === cat.id ? "default" : "outline"}
                     onClick={() => setActiveCategoryId(cat.id)}
-                    className={`rounded-xl px-8 h-14 text-lg font-bold ${activeCategoryId === cat.id ? 'shadow-md glow-primary' : 'bg-card border-border/50'}`}
+                    className={`rounded-xl min-w-[90px] px-6 h-12 text-base font-bold ${activeCategoryId === cat.id ? 'shadow-md glow-primary' : 'bg-card border-border/50'}`}
                   >
                     {cat.name}
                   </Button>
                 ))}
               </div>
-            </ScrollArea>
-            
-            <div className="relative w-full md:w-80 shrink-0">
-              <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-6 h-6 text-muted-foreground" />
-              <Input 
-                placeholder="بحث عن صنف..." 
-                className="pl-4 pr-12 h-14 rounded-xl bg-card border-border text-lg"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              <div className="relative w-56">
+                <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <Input
+                  placeholder="بحث سريع..."
+                  className="pl-3 pr-10 h-12 rounded-xl bg-card border-border text-base"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+              <Input
+                type="number"
+                placeholder="أقصى سعر"
+                className="w-28 h-12 rounded-xl bg-card border-border text-base text-center"
+                value={maxPrice}
+                onChange={(e) => setMaxPrice(e.target.value)}
               />
+              <Button
+                variant="outline"
+                className={`h-12 w-12 rounded-xl shrink-0 ${priceSort !== 'none' ? 'border-primary text-primary' : 'bg-card border-border/50'}`}
+                onClick={() => setPriceSort(prev => prev === "none" ? "asc" : prev === "asc" ? "desc" : "none")}
+                title={priceSort === "none" ? "ترتيب حسب السعر" : priceSort === "asc" ? "الأرخص أولاً" : "الأغلى أولاً"}
+              >
+                <ArrowUpDown className="w-5 h-5" />
+              </Button>
             </div>
           </div>
 
@@ -139,7 +198,7 @@ export default function POS() {
           <ScrollArea className="flex-1 pr-2">
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 pb-4">
               {filteredItems?.map(item => (
-                <Card 
+                <Card
                   key={item.id}
                   className="cursor-pointer hover:shadow-2xl hover:border-primary/50 transition-all duration-300 overflow-hidden bg-card border-border/50 group touch-target flex flex-col active:scale-95"
                   onClick={() => handleItemClick(item.id)}
@@ -147,9 +206,9 @@ export default function POS() {
                   <div className="flex-1 flex items-center justify-center p-6 bg-muted/20 group-hover:bg-primary/5 transition-colors aspect-square">
                     <span className="text-6xl opacity-30 group-hover:text-primary group-hover:opacity-50 transition-colors">☕</span>
                   </div>
-                  <div className="p-4 border-t border-border/50 bg-card/50 backdrop-blur-sm">
-                    <h3 className="font-bold text-lg text-foreground truncate">{item.name}</h3>
-                    <p className="text-primary font-black text-xl mt-1">{item.price} ج.م</p>
+                  <div className="p-3 border-t border-border/50 bg-card/50 backdrop-blur-sm text-center">
+                    <h3 className="font-bold text-sm text-foreground leading-tight break-words min-h-[2.5rem] flex items-center justify-center">{item.name}</h3>
+                    <p className="text-primary font-black text-lg mt-1">{item.price} ج.م</p>
                   </div>
                 </Card>
               ))}
@@ -165,7 +224,7 @@ export default function POS() {
               <div className="p-6 border-b border-border/50 bg-muted/10">
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-2xl font-black">طلب حالي #{activeSession.id}</h3>
-                  <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-destructive h-10 px-4 rounded-xl border border-border/20" onClick={() => setActiveSessionId(null)}>إلغاء التحديد</Button>
+                  <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-destructive h-10 px-4 rounded-xl border border-border/20" onClick={() => { setActiveSessionId(null); setSessionDeselected(true); }}>إلغاء التحديد</Button>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <span className="bg-primary/10 text-primary px-3 py-1.5 rounded-lg border border-primary/20 font-bold text-sm">العميل: {activeSession.customerName}</span>
@@ -183,12 +242,12 @@ export default function POS() {
                     </div>
                   ) : (
                     activeSession.items?.map(orderItem => (
-                      <div key={orderItem.id} className="flex items-center justify-between p-3 rounded-xl bg-background border border-border/50 hover:border-primary/30 transition-colors">
-                        <div className="flex-1">
-                          <h4 className="font-bold text-lg">{items?.find(i => i.id === orderItem.itemId)?.name}</h4>
+                      <div key={orderItem.id} className="flex items-center justify-between p-3 rounded-xl bg-background border border-border/50 hover:border-primary/30 transition-colors gap-2">
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-bold text-lg truncate" title={items?.find(i => i.id === orderItem.itemId)?.name}>{items?.find(i => i.id === orderItem.itemId)?.name}</h4>
                           <p className="text-primary font-bold text-base">{orderItem.priceAtTime * orderItem.quantity} ج.م</p>
                         </div>
-                        <div className="flex items-center gap-3 bg-muted/50 rounded-xl p-2">
+                        <div className="flex items-center gap-2 bg-muted/50 rounded-xl p-2 shrink-0">
                           <Button 
                             variant="ghost" 
                             size="icon" 
@@ -251,19 +310,23 @@ export default function POS() {
               </Button>
 
               {sessions && sessions.length > 0 && (
-                <div className="w-full mt-8 text-right">
-                  <h4 className="font-bold text-muted-foreground mb-4">الطلبات النشطة</h4>
-                  <div className="flex flex-col gap-2">
-                    {sessions.map(s => (
-                      <Button 
-                        key={s.id} 
-                        variant="outline" 
-                        className="justify-start h-12 border-border/50 hover:bg-primary/10 hover:text-primary hover:border-primary/30"
-                        onClick={() => setActiveSessionId(s.id)}
-                      >
-                        طلب #{s.id} - {s.customerName}
-                      </Button>
-                    ))}
+                <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[90vw] max-w-2xl z-50">
+                  <div className="bg-card/90 border border-border/50 rounded-2xl shadow-2xl p-6 flex flex-col items-center justify-center">
+                    <h4 className="font-bold text-muted-foreground mb-4 text-center text-xl">الطلبات النشطة</h4>
+                    <div className="flex flex-col gap-3 w-full">
+                      {sessions.map(s => (
+                        <div key={s.id} className="flex items-center justify-center w-full">
+                          <Button 
+                            variant="outline" 
+                            className="w-full h-14 flex items-center justify-center text-lg font-bold border-border/50 hover:bg-primary/10 hover:text-primary hover:border-primary/30 whitespace-normal break-words px-4 py-2"
+                            style={{ fontSize: s.customerName.length > 20 ? '1rem' : '1.25rem' }}
+                            onClick={() => { setActiveSessionId(s.id); setSessionDeselected(false); }}
+                          >
+                            <span className="w-full text-center">طلب #{s.id} - {s.customerName}</span>
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
               )}

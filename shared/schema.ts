@@ -1,128 +1,130 @@
-import { pgTable, text, serial, integer, boolean, timestamp } from "drizzle-orm/pg-core";
-import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
-import { relations } from "drizzle-orm";
 
-export const users = pgTable("users", {
-  id: serial("id").primaryKey(),
-  username: text("username").notNull().unique(),
-  password: text("password").notNull(),
-  role: text("role").notNull().default("staff"), // admin, staff
+// ---- Types ----
+
+export interface User {
+  id: number;
+  username: string;
+  password: string;
+  role: string;
+}
+
+export interface Staff {
+  id: number;
+  name: string;
+  role: string;
+}
+
+export interface Category {
+  id: number;
+  name: string;
+  color: string | null;
+}
+
+export interface Item {
+  id: number;
+  categoryId: number | null;
+  name: string;
+  price: number;
+}
+
+export interface Customer {
+  id: number;
+  name: string;
+  notes: string | null;
+  isRegular: boolean | null;
+}
+
+export interface Session {
+  id: number;
+  customerName: string;
+  customerId: number | null;
+  staffId: number | null;
+  startTime: Date;
+  endTime: Date | null;
+  status: string;
+  paymentMethod: string | null;
+  total: number | null;
+}
+
+export interface OrderItem {
+  id: number;
+  sessionId: number;
+  itemId: number;
+  quantity: number;
+  priceAtTime: number;
+}
+
+// ---- Zod Insert Schemas ----
+
+export const insertUserSchema = z.object({
+  username: z.string(),
+  password: z.string(),
+  role: z.string().default("staff"),
 });
 
-export const staff = pgTable("staff", {
-  id: serial("id").primaryKey(),
-  name: text("name").notNull(),
-  role: text("role").notNull(), // cashier, waiter, shisha
+export const insertStaffSchema = z.object({
+  name: z.string(),
+  role: z.string(),
 });
 
-export const categories = pgTable("categories", {
-  id: serial("id").primaryKey(),
-  name: text("name").notNull(),
-  color: text("color"), 
+export const insertCategorySchema = z.object({
+  name: z.string(),
+  color: z.string().nullable().optional(),
 });
 
-export const items = pgTable("items", {
-  id: serial("id").primaryKey(),
-  categoryId: integer("category_id").references(() => categories.id),
-  name: text("name").notNull(),
-  price: integer("price").notNull(),
+export const insertItemSchema = z.object({
+  categoryId: z.number().nullable().optional(),
+  name: z.string(),
+  price: z.number(),
 });
 
-export const customers = pgTable("customers", {
-  id: serial("id").primaryKey(),
-  name: text("name").notNull(),
-  notes: text("notes"),
-  isRegular: boolean("is_regular").default(false),
+export const insertCustomerSchema = z.object({
+  name: z.string(),
+  notes: z.string().nullable().optional(),
+  isRegular: z.boolean().nullable().optional(),
 });
 
-export const sessions = pgTable("sessions", {
-  id: serial("id").primaryKey(),
-  customerName: text("customer_name").notNull(),
-  customerId: integer("customer_id").references(() => customers.id),
-  staffId: integer("staff_id").references(() => staff.id),
-  startTime: timestamp("start_time").defaultNow().notNull(),
-  endTime: timestamp("end_time"),
-  status: text("status").notNull().default("active"), // active, completed, cancelled
-  paymentMethod: text("payment_method"), // cash, vodafone_cash, card
-  total: integer("total").default(0),
+export const insertSessionSchema = z.object({
+  customerName: z.string(),
+  customerId: z.number().nullable().optional(),
+  staffId: z.number().nullable().optional(),
+  status: z.string().optional(),
+  paymentMethod: z.string().nullable().optional(),
+  endTime: z.coerce.date().nullable().optional(),
 });
 
-export const orderItems = pgTable("order_items", {
-  id: serial("id").primaryKey(),
-  sessionId: integer("session_id").references(() => sessions.id).notNull(),
-  itemId: integer("item_id").references(() => items.id).notNull(),
-  quantity: integer("quantity").notNull().default(1),
-  priceAtTime: integer("price_at_time").notNull(),
+export const insertOrderItemSchema = z.object({
+  sessionId: z.number(),
+  itemId: z.number(),
+  quantity: z.number().default(1),
+  priceAtTime: z.number(),
 });
 
-// Relations
-export const categoriesRelations = relations(categories, ({ many }) => ({
-  items: many(items),
-}));
+// ---- Inferred Insert Types ----
 
-export const itemsRelations = relations(items, ({ one }) => ({
-  category: one(categories, {
-    fields: [items.categoryId],
-    references: [categories.id],
-  }),
-}));
-
-export const sessionsRelations = relations(sessions, ({ one, many }) => ({
-  staff: one(staff, {
-    fields: [sessions.staffId],
-    references: [staff.id],
-  }),
-  customer: one(customers, {
-    fields: [sessions.customerId],
-    references: [customers.id],
-  }),
-  items: many(orderItems),
-}));
-
-export const orderItemsRelations = relations(orderItems, ({ one }) => ({
-  session: one(sessions, {
-    fields: [orderItems.sessionId],
-    references: [sessions.id],
-  }),
-  item: one(items, {
-    fields: [orderItems.itemId],
-    references: [items.id],
-  }),
-}));
-
-export const insertUserSchema = createInsertSchema(users).omit({ id: true });
-export const insertStaffSchema = createInsertSchema(staff).omit({ id: true });
-export const insertCategorySchema = createInsertSchema(categories).omit({ id: true });
-export const insertItemSchema = createInsertSchema(items).omit({ id: true });
-export const insertCustomerSchema = createInsertSchema(customers).omit({ id: true });
-export const insertSessionSchema = createInsertSchema(sessions).omit({ id: true, startTime: true, total: true });
-export const insertOrderItemSchema = createInsertSchema(orderItems).omit({ id: true });
-
-export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
-
-export type Staff = typeof staff.$inferSelect;
 export type InsertStaff = z.infer<typeof insertStaffSchema>;
-
-export type Category = typeof categories.$inferSelect;
 export type InsertCategory = z.infer<typeof insertCategorySchema>;
-
-export type Item = typeof items.$inferSelect;
 export type InsertItem = z.infer<typeof insertItemSchema>;
-
-export type Customer = typeof customers.$inferSelect;
 export type InsertCustomer = z.infer<typeof insertCustomerSchema>;
-
-export type Session = typeof sessions.$inferSelect;
 export type InsertSession = z.infer<typeof insertSessionSchema>;
-
-export type OrderItem = typeof orderItems.$inferSelect;
 export type InsertOrderItem = z.infer<typeof insertOrderItemSchema>;
 
-// Request Types
+// ---- Request Types ----
+
 export type UpdateItemRequest = Partial<InsertItem>;
 export type UpdateSessionRequest = Partial<InsertSession>;
 export type CheckoutSessionRequest = {
   paymentMethod: string;
 };
+
+// ---- Compatibility shims for shared/routes.ts ----
+// These are used only at the type level: z.custom<typeof staff.$inferSelect>()
+
+export const staff = {} as { $inferSelect: Staff };
+export const categories = {} as { $inferSelect: Category };
+export const items = {} as { $inferSelect: Item };
+export const customers = {} as { $inferSelect: Customer };
+export const sessions = {} as { $inferSelect: Session };
+export const orderItems = {} as { $inferSelect: OrderItem };

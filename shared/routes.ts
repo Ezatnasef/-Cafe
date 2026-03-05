@@ -1,6 +1,9 @@
 import { z } from 'zod';
 import { insertStaffSchema, insertCategorySchema, insertItemSchema, insertCustomerSchema, insertSessionSchema, staff, categories, items, customers, sessions, orderItems } from './schema';
 
+// Re-export types for convenience
+export type { InsertStaff, InsertCategory, InsertItem, InsertCustomer, InsertSession } from './schema';
+
 export const errorSchemas = {
   validation: z.object({
     message: z.string(),
@@ -30,6 +33,24 @@ export const api = {
       responses: {
         201: z.custom<typeof staff.$inferSelect>(),
         400: errorSchemas.validation,
+      }
+    },
+    update: {
+      method: 'PUT' as const,
+      path: '/api/staff/:id' as const,
+      input: insertStaffSchema.partial(),
+      responses: {
+        200: z.custom<typeof staff.$inferSelect>(),
+        400: errorSchemas.validation,
+        404: errorSchemas.notFound,
+      }
+    },
+    delete: {
+      method: 'DELETE' as const,
+      path: '/api/staff/:id' as const,
+      responses: {
+        204: z.void(),
+        404: errorSchemas.notFound,
       }
     }
   },
@@ -93,6 +114,24 @@ export const api = {
       responses: {
         201: z.custom<typeof customers.$inferSelect>(),
         400: errorSchemas.validation,
+      }
+    },
+    update: {
+      method: 'PUT' as const,
+      path: '/api/customers/:id' as const,
+      input: insertCustomerSchema.partial(),
+      responses: {
+        200: z.custom<typeof customers.$inferSelect>(),
+        400: errorSchemas.validation,
+        404: errorSchemas.notFound,
+      }
+    },
+    delete: {
+      method: 'DELETE' as const,
+      path: '/api/customers/:id' as const,
+      responses: {
+        204: z.void(),
+        404: errorSchemas.notFound,
       }
     }
   },
