@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { 
   LayoutDashboard, 
@@ -29,17 +30,37 @@ const items = [
 
 export function AppSidebar() {
   const [location] = useLocation();
+  const [now, setNow] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const formatDate = (date: Date) => {
+    return date.toLocaleDateString('ar-EG', { 
+      weekday: 'long', 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
+  };
 
   return (
     <Sidebar className="border-r-border/50 bg-sidebar">
       <SidebarHeader className="p-6">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-lg shadow-primary/20">
-            <span className="text-primary-foreground font-bold text-xl">L</span>
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-lg shadow-primary/20">
+              <span className="text-primary-foreground font-bold text-xl">C</span>
+            </div>
+            <h2 className="text-xl font-black text-foreground tracking-wide">
+              Casablanca <span className="text-primary">Cafe</span>
+            </h2>
           </div>
-          <h2 className="text-2xl font-black text-foreground tracking-wide">
-            Lounge<span className="text-primary">POS</span>
-          </h2>
+          <div className="text-xs text-muted-foreground font-bold bg-muted/30 p-2 rounded-lg border border-border/50 text-center">
+            {formatDate(now)}
+          </div>
         </div>
       </SidebarHeader>
       <SidebarContent>

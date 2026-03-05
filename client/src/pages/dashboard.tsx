@@ -1,12 +1,13 @@
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Layout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useDailyReport } from "@/hooks/use-reports";
 import { useSessions } from "@/hooks/use-sessions";
-import { PlayCircle, TrendingUp, Users, ShoppingBag } from "lucide-react";
+import { PlayCircle, TrendingUp, Users, ShoppingBag, Plus } from "lucide-react";
 
 export default function Dashboard() {
+  const [, setLocation] = useLocation();
   const { data: report, isLoading: reportLoading } = useDailyReport();
   const { data: sessions, isLoading: sessionsLoading } = useSessions("active");
 
@@ -20,20 +21,32 @@ export default function Dashboard() {
         <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-card to-background border border-border/50 p-8 md:p-12 shadow-2xl">
           <div className="absolute top-0 right-0 w-96 h-96 bg-primary/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
           
-          <div className="relative z-10 max-w-2xl">
+          <div className="relative z-10 max-w-2xl text-right">
             <h1 className="text-4xl md:text-5xl font-black text-foreground mb-4 leading-tight">
-              مرحباً بك في نظام <span className="text-primary">LoungePOS</span>
+              نظام إدارة كافيه <span className="text-primary">Casablanca</span>
             </h1>
             <p className="text-lg text-muted-foreground mb-8">
-              إدارة سلسة وسريعة للطلبات، مصممة خصيصاً للمقاهي والمطاعم الحديثة.
+              أدر المنيو، الشيشة، العملاء، والموظفين من شاشة واحدة. تابع أرباحك وصدّر تقاريرك بسهولة.
             </p>
             
-            <Link href="/pos">
-              <Button size="lg" className="h-16 px-8 text-xl font-bold rounded-2xl bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary shadow-lg glow-primary text-primary-foreground transition-all hover:-translate-y-1 active:translate-y-0">
+            <div className="flex flex-wrap gap-4 justify-start">
+              <Button 
+                size="lg" 
+                className="h-16 px-8 text-xl font-bold rounded-2xl bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary shadow-lg glow-primary text-primary-foreground transition-all hover:-translate-y-1 active:translate-y-0"
+                onClick={() => setLocation("/pos")}
+              >
                 <PlayCircle className="w-6 h-6 ml-3" />
                 ابدأ التشغيل الآن
               </Button>
-            </Link>
+              <Button 
+                size="lg" 
+                variant="outline"
+                className="h-16 px-8 text-xl font-bold rounded-2xl border-border/50 bg-background/50 hover:bg-muted transition-all hover:-translate-y-1 active:translate-y-0"
+                onClick={() => setLocation("/menu")}
+              >
+                <Plus className="ml-2 w-6 h-6" /> إضافة صنف
+              </Button>
+            </div>
           </div>
         </div>
 

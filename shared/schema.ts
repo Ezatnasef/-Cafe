@@ -3,6 +3,13 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
 
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
+  username: text("username").notNull().unique(),
+  password: text("password").notNull(),
+  role: text("role").notNull().default("staff"), // admin, staff
+});
+
 export const staff = pgTable("staff", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
@@ -84,12 +91,16 @@ export const orderItemsRelations = relations(orderItems, ({ one }) => ({
   }),
 }));
 
+export const insertUserSchema = createInsertSchema(users).omit({ id: true });
 export const insertStaffSchema = createInsertSchema(staff).omit({ id: true });
 export const insertCategorySchema = createInsertSchema(categories).omit({ id: true });
 export const insertItemSchema = createInsertSchema(items).omit({ id: true });
 export const insertCustomerSchema = createInsertSchema(customers).omit({ id: true });
 export const insertSessionSchema = createInsertSchema(sessions).omit({ id: true, startTime: true, total: true });
 export const insertOrderItemSchema = createInsertSchema(orderItems).omit({ id: true });
+
+export type User = typeof users.$inferSelect;
+export type InsertUser = z.infer<typeof insertUserSchema>;
 
 export type Staff = typeof staff.$inferSelect;
 export type InsertStaff = z.infer<typeof insertStaffSchema>;

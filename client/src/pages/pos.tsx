@@ -186,14 +186,14 @@ export default function POS() {
                     activeSession.items?.map(orderItem => (
                       <div key={orderItem.id} className="flex items-center justify-between p-3 rounded-xl bg-background border border-border/50 hover:border-primary/30 transition-colors">
                         <div className="flex-1">
-                          <h4 className="font-bold">{items?.find(i => i.id === orderItem.itemId)?.name}</h4>
-                          <p className="text-primary font-semibold text-sm">{orderItem.priceAtTime * orderItem.quantity} ج.م</p>
+                          <h4 className="font-bold text-lg">{items?.find(i => i.id === orderItem.itemId)?.name}</h4>
+                          <p className="text-primary font-bold text-base">{orderItem.priceAtTime * orderItem.quantity} ج.م</p>
                         </div>
-                        <div className="flex items-center gap-2 bg-muted/50 rounded-lg p-1">
+                        <div className="flex items-center gap-3 bg-muted/50 rounded-xl p-2">
                           <Button 
                             variant="ghost" 
                             size="icon" 
-                            className="h-8 w-8 text-foreground hover:text-primary hover:bg-background rounded-md"
+                            className="h-12 w-12 text-foreground hover:text-primary hover:bg-background rounded-lg border border-border/50"
                             onClick={() => {
                               if (orderItem.quantity > 1) {
                                 updateItem.mutate({ sessionId: activeSession.id, itemId: orderItem.id, quantity: orderItem.quantity - 1 });
@@ -202,16 +202,16 @@ export default function POS() {
                               }
                             }}
                           >
-                            <Minus className="w-4 h-4" />
+                            <Minus className="w-6 h-6" />
                           </Button>
-                          <span className="w-6 text-center font-bold">{orderItem.quantity}</span>
+                          <span className="w-8 text-center font-black text-xl">{orderItem.quantity}</span>
                           <Button 
                             variant="ghost" 
                             size="icon" 
-                            className="h-8 w-8 text-foreground hover:text-primary hover:bg-background rounded-md"
+                            className="h-12 w-12 text-foreground hover:text-primary hover:bg-background rounded-lg border border-border/50"
                             onClick={() => updateItem.mutate({ sessionId: activeSession.id, itemId: orderItem.id, quantity: orderItem.quantity + 1 })}
                           >
-                            <Plus className="w-4 h-4" />
+                            <Plus className="w-6 h-6" />
                           </Button>
                         </div>
                       </div>
